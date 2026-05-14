@@ -1,0 +1,16 @@
+### PYTHON CORE
+__pycache__/
+*.py[cod]
+
+### AMBIENTI VIRTUALI
+.venv/
+venv/
+
+### JUPYTER NOTEBOOK
+.ipynb_checkpoints/
+
+### IDE E EDITOR
+.vscode/
+
+### ESCLUDO DB E FILE PERSONALI
+appunti.md
