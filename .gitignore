@@ -13,5 +13,4 @@ venv/
 .vscode/
 
 ### ESCLUDO DB E FILE PERSONALI
-appunti.md
 hub_candidature.db
