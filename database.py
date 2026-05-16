@@ -478,16 +478,15 @@ class CandidatureManager:
     def avanza_stati() -> dict[str, int]:
         """
         Esegue tutte le transizioni automatiche in sequenza.
-        Da chiamare all'avvio della pagina Streamlit o via scheduler.
 
         Restituisce un dizionario con il numero di candidature aggiornate
-        per ogni transizione, utile per mostrare notifiche in UI.
+        per ogni transizione.
 
         Esempio di ritorno:
             {
-                "ricevuta_a_pending":   2,
-                "pending_a_sollecito":  1,
-                "inviata_a_sollecito":  3,
+                "ricevuta_a_pending"   :   2,
+                "pending_a_sollecito"  :   1,
+                "inviata_a_sollecito"  :   3,
             }
         """
         return {
