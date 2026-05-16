@@ -3,8 +3,23 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "hub_candidature.db"
-STATI_VALIDI = ("inviata", "ricevuta", "pending", "rifiutata")
+STATI_VALIDI = ("inviata", "ricevuta", "pending", "rifiutata, sollecito")
 TIPI_CANDIDATURA = ("semplice", "portale")
+
+# Flusso(Con Risposta):
+# Al momento dell'invio del CV, la candidatura assume lo stato Inviata.
+# Se l'azienda risponde con una conferma di ricezione, lo stato avanza a Ricevuta.
+# Trascorsi 2 giorni lavorativi in questo stato, la candidatura passa automaticamente
+# a Pending. Se non si registrano ulteriori aggiornamenti dopo altri 8 giorni lavorativi,
+# il sistema segnala la necessità di inviare un Sollecito.
+
+# Flusso(Senza Risposta):
+# Se la candidatura rimane nello stato Inviata e non si riceve alcun riscontro
+# o conferma automatica entro 3 giornni lavorativi, la pratica viene spostata
+# nello stato collecito e verrà valorizzato un campo di controllo per tenere
+# traccia del fatto che quell'azienda non ha sistemi di tracciamento automatico
+# e in fase di sollecito useremo un tono leggermente diverso, dato che non
+# abbiamo la certezza matematica che abbiano ricevuto il nostro cv
 
 # ----------------------------------------------
 # SCHEMA SQL
@@ -40,6 +55,7 @@ CREATE TABLE IF NOT EXISTS candidature (
     tipo_candidatura     TEXT,
     versione_curriculum  TEXT,
     stato                TEXT    DEFAULT 'inviata',
+    nessun_feedback      TEXT    DEFAULT False,
     data_invio           TEXT,
     data_ultima_modifica TEXT,
     note                 TEXT
@@ -62,16 +78,34 @@ def _conn():
 def _oggi() -> str:
     return date.today().isoformat()
 
-# formato data_iso ('YYYY-MM-DD')
+# TODO Creare una funzione che mi calcola i giorni lavorativi escludendo sabato e domenica
 
 
 def _giorni_lavorativi(data_iso: str) -> int:
     """Calcola i giorni lavorativi trascorsi da data_iso a oggi (esclude sab/dom)."""
     try:
-        start = date.fromisoformat(data_iso)
+        data_target = date.fromisoformat(data_iso)
     except (ValueError, TypeError):
         return 0
-        # TODO da finire di implementare
+    oggi = date.today()
+
+    if data_target == oggi:
+        return 0
+
+    # determiniamo la direzione (futuro o passato)
+    passo = 1 if data_target >= oggi else -1
+    giorni_lavorativi = 0
+    data_corrente = oggi
+
+    # Iteriamo giorno per giorno fino a raggiungere la data target
+    while data_corrente != data_target:
+        data_corrente += timedelta(days=passo)
+
+        # weekday() restituisce 0 per Lunedì ... 5 per Sabato, 6 per Domenica
+        if data_corrente.weekday() < 5:
+            giorni_lavorativi += passo
+
+    return giorni_lavorativi
 
 
 # ----------------------------------------------
@@ -181,7 +215,7 @@ class CandicatureManager:
 
     @staticmethod
     def create(id_azienda: int, posizione: str, tipo_candidatura: str,
-               versione_curriculum: str = "", stato: str = "inviata",
+               versione_curriculum: str = "", stato: str = "inviata", nessun_feedback: bool = False,
                data_invio: str = "", id_contatto: int | None = None,
                note: str = "") -> int:
         # controllo il tipo di candidatura e stati altrimento sollevo eccezione
@@ -195,10 +229,10 @@ class CandicatureManager:
             cur = con.execute(
                 "INSERT INTO candidature "
                 "(id_azienda, id_contatto, posizione, tipo_candidatura, "
-                " versione_curriculum, stato, data_invio, data_ultima_modifica, note) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " versione_curriculum, stato, nessun_feedback, data_invio, data_ultima_modifica, note) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (id_azienda, id_contatto, posizione, tipo_candidatura,
-                 versione_curriculum, stato, data_invio or oggi, oggi, note),
+                 versione_curriculum, stato, nessun_feedback, data_invio or oggi, oggi, note),
             )
             return cur.lastrowid
 
@@ -237,7 +271,7 @@ class CandicatureManager:
 
     @staticmethod
     def update(id_cand: int, posizione: str, tipo_candidatura: str,
-               versione_curriculum: str, stato: str, data_invio: str,
+               versione_curriculum: str, stato: str, nessun_feedback: bool, data_invio: str,
                id_contatto: int | None, note: str) -> None:
         if tipo_candidatura not in TIPI_CANDIDATURA:
             raise ValueError(
@@ -247,9 +281,9 @@ class CandicatureManager:
         with _conn() as con:
             con.execute(
                 "UPDATE candidature SET posizione=?, tipo_candidatura=?, "
-                "versione_curriculum=?, stato=?, data_invio=?, "
+                "versione_curriculum=?, stato=?, nessun_feedback=?, data_invio=?, "
                 "id_contatto=?, note=?, data_ultima_modifica=? WHERE id=?",
-                (posizione, tipo_candidatura, versione_curriculum, stato,
+                (posizione, tipo_candidatura, versione_curriculum, stato, nessun_feedback,
                  data_invio, id_contatto, note, _oggi(), id_cand),
             )
 
@@ -264,4 +298,5 @@ class CandicatureManager:
                 (nuovo_stato, _oggi(), id_cand),
             )
 
-    # dobbiamo chiamare una funzione che fa la differenza sulla data
+    # TODO creare un metodo per cambiare lo stato da ricevuta a pending dopo 2 giorni lavorativi
+    # TODO creare un metodo per sollecitare tutte le candidature con lo stato pending
