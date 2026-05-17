@@ -4,7 +4,7 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "hub_candidature.db"
 
-# Valori ammessi per lo stato
+# Valori ammessi:
 STATI_VALIDI = ("inviata", "ricevuta", "pending", "sollecito", "rifiutata")
 TIPI_CANDIDATURA = ("semplice", "portale")
 
@@ -497,21 +497,3 @@ class CandidatureManager:
             "pending_a_sollecito": CandidatureManager.avanza_pending_a_sollecito(),
             "inviata_a_sollecito": CandidatureManager.avanza_inviata_a_sollecito(),
         }
-
-
-# Inizializza DB
-init_db()
-
-
-# azienda = AziendeManager.create('VASS', 'Roma')
-
-# contatto = ContattiManager.create(
-#     azienda, 'Oriol Grasa Sánchez', 'Hiring Manager')
-
-# candidatura = CandidatureManager.create(azienda, 'Junior Salesforce Administrator & Developer ',
-#                                         'semplice', 'CV_DomenicoSanto_eng_ita_2026', id_contatto=contatto)
-
-# print(f"ID dell\'azienza inserita è: {azienda}")
-# print(f"ID dell'ultima candidatura è: {candidatura}")
-
-# CandidatureManager.update_stato(7, 'ricevuta')
