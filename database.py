@@ -18,6 +18,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS aziende (
     id       INTEGER PRIMARY KEY AUTOINCREMENT,
     nome     TEXT    NOT NULL,
+    citta    TEXT,
     sito_web TEXT,
     username TEXT,
     password TEXT,
@@ -114,6 +115,7 @@ class AziendeManager:
     @staticmethod
     def create(
         nome: str,
+        citta: str = "",
         sito_web: str = "",
         username: str = "",
         password: str = "",
@@ -122,9 +124,9 @@ class AziendeManager:
         """Inserisce una nuova azienda e restituisce il suo id."""
         with _conn() as con:
             cur = con.execute(
-                "INSERT INTO aziende (nome, sito_web, username, password, note) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (nome, sito_web, username, password, note),
+                "INSERT INTO aziende (nome, citta, sito_web, username, password, note) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (nome, citta, sito_web, username, password, note),
             )
             return cur.lastrowid
 
@@ -148,6 +150,7 @@ class AziendeManager:
     def update(
         id_azienda: int,
         nome: str,
+        citta: str = "",
         sito_web: str = "",
         username: str = "",
         password: str = "",
@@ -156,9 +159,9 @@ class AziendeManager:
         """Aggiorna i dati di un'azienda esistente."""
         with _conn() as con:
             con.execute(
-                "UPDATE aziende SET nome=?, sito_web=?, username=?, password=?, note=? "
+                "UPDATE aziende SET nome=?, citta=?, sito_web=?, username=?, password=?, note=? "
                 "WHERE id=?",
-                (nome, sito_web, username, password, note, id_azienda),
+                (nome, citta, sito_web, username, password, note, id_azienda),
             )
 
 
@@ -494,3 +497,21 @@ class CandidatureManager:
             "pending_a_sollecito": CandidatureManager.avanza_pending_a_sollecito(),
             "inviata_a_sollecito": CandidatureManager.avanza_inviata_a_sollecito(),
         }
+
+
+# Inizializza DB
+init_db()
+
+
+# azienda = AziendeManager.create('VASS', 'Roma')
+
+# contatto = ContattiManager.create(
+#     azienda, 'Oriol Grasa Sánchez', 'Hiring Manager')
+
+# candidatura = CandidatureManager.create(azienda, 'Junior Salesforce Administrator & Developer ',
+#                                         'semplice', 'CV_DomenicoSanto_eng_ita_2026', id_contatto=contatto)
+
+# print(f"ID dell\'azienza inserita è: {azienda}")
+# print(f"ID dell'ultima candidatura è: {candidatura}")
+
+# CandidatureManager.update_stato(7, 'ricevuta')
