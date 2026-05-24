@@ -73,7 +73,6 @@ CREATE TABLE IF NOT EXISTS candidature (
 CREATE TRIGGER IF NOT EXISTS trg_aziende_data_modifica
 AFTER UPDATE ON aziende
 FOR EACH ROW
-WHEN OLD.data_modifica = NEW.data_modifica
 BEGIN
     UPDATE aziende
     SET data_modifica = CURRENT_TIMESTAMP
@@ -83,7 +82,6 @@ END;
 CREATE TRIGGER IF NOT EXISTS trg_contatti_data_modifica
 AFTER UPDATE ON contatti
 FOR EACH ROW
-WHEN OLD.data_modifica = NEW.data_modifica
 BEGIN
     UPDATE contatti
     SET data_modifica = CURRENT_TIMESTAMP
@@ -93,7 +91,6 @@ END;
 CREATE TRIGGER IF NOT EXISTS trg_candidature_data_modifica
 AFTER UPDATE ON candidature
 FOR EACH ROW
-WHEN OLD.data_modifica = NEW.data_modifica
 BEGIN
     UPDATE candidature
     SET data_modifica = CURRENT_TIMESTAMP
