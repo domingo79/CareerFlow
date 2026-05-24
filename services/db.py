@@ -4,7 +4,7 @@ from pathlib import Path
 # ==============================================================================
 # Percordo al db nella root del progetto
 # ==============================================================================
-ROOT_DIR = Path.cwd()  # root del progetto
+ROOT_DIR = Path(__file__).parent.parent  # da service/ risale alla root
 instance_dir = ROOT_DIR / "instance"
 schema_path = ROOT_DIR / "schema_db.sql"
 db_path = instance_dir / "hub_candidature.db"
@@ -42,7 +42,7 @@ def _seed_tables(conn: sqlite3.Connection) -> None:
 
     # Stati candidatura
     count = conn.execute(
-        "SELECT COUNT(*) FRON stati_candidatura").fetchone()[0]
+        "SELECT COUNT(*) FROM stati_candidatura").fetchone()[0]
     if count == 0:
         stati = [
             ("Inviata",     "#3B82F6", 1, 1),   # blu
