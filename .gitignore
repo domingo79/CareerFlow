@@ -12,5 +12,6 @@ venv/
 ### IDE E EDITOR
 .vscode/
 
-### ESCLUDO DB E FILE PERSONALI
+### ESCLUDO DB 
+istance/
 hub_candidature.db
