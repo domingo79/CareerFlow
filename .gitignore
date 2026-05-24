@@ -13,5 +13,5 @@ venv/
 .vscode/
 
 ### ESCLUDO DB 
-istance/
+instance/
 hub_candidature.db
