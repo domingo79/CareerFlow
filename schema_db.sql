@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS contatti (
 );
 
 CREATE TABLE IF NOT EXISTS stati_candidatura (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL UNIQUE,
-    colore TEXT,
-    ordine INTEGER UNIQUE,
-    attiva INTEGER DEFAULT 1
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome    TEXT NOT NULL UNIQUE,
+    colore  TEXT,
+    ordine  INTEGER UNIQUE,
+    attiva  INTEGER NOT NULL DEFAULT 1 CHECK(attiva IN (0,1))
 );
 
 CREATE TABLE IF NOT EXISTS modalita_lavoro (
