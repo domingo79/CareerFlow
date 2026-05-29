@@ -1,12 +1,22 @@
+# ============================================================
+# routes/referenti.py — tutte le pagine relative ai referenti
+# Un referente è una persona (HR, recruiter, manager) collegata
+# a un'azienda. La logica è identica ad aziende.py.
+# ============================================================
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from service.db import apri_db
+
 
 referenti_bp = Blueprint('referenti', __name__, url_prefix='/referenti')
 
 
+# ── LISTA ──────────────────────────────────────────────────
 @referenti_bp.route('/')
 def lista():
     with apri_db() as db:
+        # JOIN (senza LEFT): mostra solo i referenti che hanno un'azienda associata.
+        # Ordiniamo prima per azienda, poi per nome del referente.
         referenti = db.execute('''
             SELECT r.*, a.nome AS nome_azienda
             FROM referenti r
@@ -17,21 +27,27 @@ def lista():
     return render_template('referenti/lista.html', referenti=referenti)
 
 
+# ── NUOVO REFERENTE ────────────────────────────────────────
 @referenti_bp.route('/nuovo', methods=['GET', 'POST'])
 def nuovo():
     with apri_db() as db:
-        aziende = db.execute('SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome').fetchall()
+        # carichiamo le aziende attive per il menu <select>
+        aziende = db.execute(
+            'SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome'
+        ).fetchall()
 
         if request.method == 'POST':
-            nome = request.form.get('nome', '').strip()
-            azienda_id = request.form.get('azienda_id')
+            nome       = request.form.get('nome', '').strip()
+            azienda_id = request.form.get('azienda_id')   # ID dell'azienda scelta nel select
 
+            # validazione: entrambi i campi sono obbligatori
             if not nome or not azienda_id:
                 flash('Nome e azienda sono obbligatori.', 'danger')
                 return render_template('referenti/form.html', aziende=aziende, dati=request.form)
 
             db.execute('''
-                INSERT INTO referenti (azienda_id, nome, cognome, email, telefono, ruolo, linkedin, note)
+                INSERT INTO referenti
+                    (azienda_id, nome, cognome, email, telefono, ruolo, linkedin, note)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 azienda_id,
@@ -50,26 +66,36 @@ def nuovo():
         return render_template('referenti/form.html', aziende=aziende, dati={})
 
 
+# ── MODIFICA REFERENTE ─────────────────────────────────────
 @referenti_bp.route('/<int:id>/modifica', methods=['GET', 'POST'])
 def modifica(id):
     with apri_db() as db:
-        referente = db.execute('SELECT * FROM referenti WHERE id = ? AND attiva = 1', (id,)).fetchone()
+        referente = db.execute(
+            'SELECT * FROM referenti WHERE id = ? AND attiva = 1', (id,)
+        ).fetchone()
+
         if referente is None:
             return redirect(url_for('referenti.lista'))
 
-        aziende = db.execute('SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome').fetchall()
+        aziende = db.execute(
+            'SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome'
+        ).fetchall()
 
         if request.method == 'POST':
-            nome = request.form.get('nome', '').strip()
+            nome       = request.form.get('nome', '').strip()
             azienda_id = request.form.get('azienda_id')
 
             if not nome or not azienda_id:
                 flash('Nome e azienda sono obbligatori.', 'danger')
-                return render_template('referenti/form.html', aziende=aziende, dati=request.form, referente=referente)
+                return render_template('referenti/form.html',
+                                       aziende=aziende,
+                                       dati=request.form,
+                                       referente=referente)
 
             db.execute('''
                 UPDATE referenti
-                SET azienda_id=?, nome=?, cognome=?, email=?, telefono=?, ruolo=?, linkedin=?, note=?
+                SET azienda_id=?, nome=?, cognome=?, email=?,
+                    telefono=?, ruolo=?, linkedin=?, note=?
                 WHERE id=?
             ''', (
                 azienda_id,
@@ -86,14 +112,19 @@ def modifica(id):
             flash(f'Referente "{nome}" aggiornato.', 'success')
             return redirect(url_for('referenti.lista'))
 
-        return render_template('referenti/form.html', aziende=aziende, dati=referente, referente=referente)
+        return render_template('referenti/form.html',
+                               aziende=aziende,
+                               dati=referente,
+                               referente=referente)
 
 
+# ── ELIMINA REFERENTE ──────────────────────────────────────
 @referenti_bp.route('/<int:id>/elimina', methods=['POST'])
 def elimina(id):
     with apri_db() as db:
         referente = db.execute('SELECT nome FROM referenti WHERE id = ?', (id,)).fetchone()
         if referente:
+            # soft delete: attiva=0 invece di DELETE
             db.execute('UPDATE referenti SET attiva = 0 WHERE id = ?', (id,))
             db.commit()
             flash(f'Referente "{referente["nome"]}" eliminato.', 'warning')

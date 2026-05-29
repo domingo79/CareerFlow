@@ -1,8 +1,17 @@
+{#
+    {% extends 'base.html' %} dice a Jinja2 (il motore di template di Flask)
+    che questo file "eredita" la struttura di base.html.
+    Tutto ciò che è fuori dai blocchi {% block %} in base.html viene incluso automaticamente
+    (navbar, CSS, script, ecc.). Noi dobbiamo solo riempire i blocchi.
+#}
 {% extends 'base.html' %}
 
+{# Sovrascriviamo il titolo della scheda del browser #}
 {% block title %}Aziende — CareerFlow{% endblock %}
 
 {% block content %}
+
+{# Intestazione pagina con pulsante "Nuova azienda" #}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0"><i class="bi bi-building me-2"></i>Aziende</h1>
     <a href="{{ url_for('aziende.nuova') }}" class="btn btn-primary">
@@ -10,7 +19,12 @@
     </a>
 </div>
 
+{#
+    {% if aziende %} controlla se la lista è non vuota.
+    Se non ci sono aziende, mostriamo uno stato vuoto invece della tabella.
+#}
 {% if aziende %}
+
 <div class="card shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -24,17 +38,33 @@
                 </tr>
             </thead>
             <tbody>
+                {#
+                    {% for a in aziende %} itera sulla lista 'aziende' passata da Python.
+                    Ogni 'a' è una riga del risultato SQL (accessibile per nome colonna).
+                    {% endfor %} chiude il ciclo.
+                #}
                 {% for a in aziende %}
                 <tr>
                     <td class="fw-semibold">{{ a.nome }}</td>
+
+                    {#
+                        {{ a.citta or '—' }} mostra il valore se esiste,
+                        altrimenti mostra '—' (il campo è NULL nel DB).
+                        {% if a.paese %} ... {% endif %} aggiunge il paese solo se presente.
+                    #}
                     <td class="text-muted">
                         {{ a.citta or '—' }}{% if a.paese %}, {{ a.paese }}{% endif %}
                     </td>
+
                     <td>
+                        {# 'a.dimensione' viene dal JOIN con dimensione_azienda (AS dimensione) #}
                         {% if a.dimensione %}
-                            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ a.dimensione }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                {{ a.dimensione }}
+                            </span>
                         {% else %}—{% endif %}
                     </td>
+
                     <td>
                         {% if a.sito_web %}
                             <a href="{{ a.sito_web }}" target="_blank" class="text-muted me-2" title="Sito web">
@@ -48,12 +78,22 @@
                         {% endif %}
                         {% if not a.sito_web and not a.linkedin %}—{% endif %}
                     </td>
+
                     <td class="text-end">
+                        {# Pulsante modifica: link alla route modifica con l'ID dell'azienda #}
                         <a href="{{ url_for('aziende.modifica', id=a.id) }}"
                            class="btn btn-sm btn-outline-secondary me-1" title="Modifica">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <form action="{{ url_for('aziende.elimina', id=a.id) }}" method="post" class="d-inline"
+
+                        {#
+                            Pulsante elimina: è un <form> con metodo POST perché
+                            l'eliminazione è un'azione che modifica i dati.
+                            Non usiamo un semplice link (GET) per evitare eliminazioni accidentali.
+                            onsubmit="return confirm(...)" mostra un popup di conferma prima di inviare.
+                        #}
+                        <form action="{{ url_for('aziende.elimina', id=a.id) }}" method="post"
+                              class="d-inline"
                               onsubmit="return confirm('Eliminare {{ a.nome }}?')">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina">
                                 <i class="bi bi-trash"></i>
@@ -66,9 +106,14 @@
         </table>
     </div>
 </div>
-<p class="text-muted small mt-2">{{ aziende | length }} aziend{{ 'a' if aziende | length == 1 else 'e' }}</p>
+
+{# Contatore in fondo: '| length' è un filtro Jinja2 che conta gli elementi di una lista #}
+<p class="text-muted small mt-2">
+    {{ aziende | length }} aziend{{ 'a' if aziende | length == 1 else 'e' }}
+</p>
 
 {% else %}
+{# Stato vuoto: mostrato quando non ci sono aziende #}
 <div class="text-center py-5 text-muted">
     <i class="bi bi-building fs-1 d-block mb-3"></i>
     <p class="mb-0">Nessuna azienda registrata.</p>
@@ -77,4 +122,5 @@
     </a>
 </div>
 {% endif %}
+
 {% endblock %}

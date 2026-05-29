@@ -1,20 +1,32 @@
 {% extends 'base.html' %}
 
+{#
+    Questo form è usato sia per CREARE una nuova azienda che per MODIFICARNE una esistente.
+    Python passa la variabile 'azienda' solo in caso di modifica.
+    Il template la usa per cambiare titolo e precompilare i campi.
+#}
 {% block title %}{{ 'Modifica azienda' if azienda else 'Nuova azienda' }} — CareerFlow{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-7">
 
+        {# Freccia indietro + titolo #}
         <div class="d-flex align-items-center mb-4">
             <a href="{{ url_for('aziende.lista') }}" class="btn btn-link text-muted p-0 me-3">
                 <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <h1 class="h3 mb-0">
+                {# operatore ternario Jinja2: 'valore_se_vero' if condizione else 'valore_se_falso' #}
                 {{ 'Modifica azienda' if azienda else 'Nuova azienda' }}
             </h1>
         </div>
 
+        {#
+            action="" non serve: il form invia i dati all'URL corrente via POST.
+            Flask controlla request.method == 'POST' e salva i dati.
+            novalidate disabilita la validazione del browser (la fa Python).
+        #}
         <form method="post" novalidate>
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -24,6 +36,12 @@
                             <label class="form-label fw-semibold">
                                 Nome azienda <span class="text-danger">*</span>
                             </label>
+                            {#
+                                {{ dati.nome or '' }}:
+                                - In modalità CREA: dati={} (dict vuoto) → nome non esiste → '' (campo vuoto)
+                                - In modalità MODIFICA: dati=azienda (riga SQL) → mostra il valore attuale
+                                - Se il form viene rispedito con errori: dati=request.form → ri-mostra quanto scritto
+                            #}
                             <input type="text" name="nome" class="form-control"
                                    value="{{ dati.nome or '' }}" required autofocus>
                         </div>
@@ -43,6 +61,13 @@
                             <label class="form-label">Dimensione</label>
                             <select name="dimensione_azienda_id" class="form-select">
                                 <option value="">— seleziona —</option>
+                                {#
+                                    Per ogni dimensione (Startup, PMI, Corporate):
+                                    - mostriamo l'opzione
+                                    - aggiungiamo 'selected' se corrisponde al valore attuale di 'dati'
+                                    '| default(0) | int': se dati.dimensione_azienda_id non esiste
+                                    (form vuoto), usa 0 → nessuna opzione selezionata
+                                #}
                                 {% for d in dimensioni %}
                                 <option value="{{ d.id }}"
                                     {% if dati.dimensione_azienda_id | default(0) | int == d.id %}selected{% endif %}>
@@ -86,8 +111,10 @@
 
                     </div>
                 </div>
+
                 <div class="card-footer d-flex justify-content-end gap-2">
                     <a href="{{ url_for('aziende.lista') }}" class="btn btn-outline-secondary">Annulla</a>
+                    {# type="submit" invia il form → Flask riceve POST #}
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-lg me-1"></i>Salva
                     </button>

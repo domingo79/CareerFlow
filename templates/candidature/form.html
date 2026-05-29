@@ -33,6 +33,10 @@
                             <label class="form-label fw-semibold">
                                 Azienda <span class="text-danger">*</span>
                             </label>
+                            {#
+                                id="azienda_id" è importante: il JavaScript in fondo alla pagina
+                                lo usa per sapere quale azienda è selezionata e filtrare i referenti.
+                            #}
                             <select name="azienda_id" id="azienda_id" class="form-select" required>
                                 <option value="">— seleziona —</option>
                                 {% for a in aziende %}
@@ -46,9 +50,13 @@
 
                         <div class="col-md-6">
                             <label class="form-label">Referente</label>
-                            {# il JS qui sotto filtra i referenti in base all'azienda scelta #}
                             <select name="referente_id" id="referente_id" class="form-select">
                                 <option value="">— nessuno —</option>
+                                {#
+                                    data-azienda="{{ r.azienda_id }}" è un attributo HTML personalizzato.
+                                    Il JavaScript lo legge per sapere a quale azienda appartiene il referente
+                                    e nascondere quelli non pertinenti quando si cambia l'azienda.
+                                #}
                                 {% for r in referenti %}
                                 <option value="{{ r.id }}"
                                         data-azienda="{{ r.azienda_id }}"
@@ -89,6 +97,7 @@
 
                         <div class="col-md-6">
                             <label class="form-label">Data candidatura</label>
+                            {# Se vuoto, Python usa date.today() automaticamente #}
                             <input type="date" name="data_candidatura" class="form-control"
                                    value="{{ dati.data_candidatura or '' }}">
                         </div>
@@ -102,7 +111,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Versione CV</label>
                             <input type="text" name="versione_cv" class="form-control"
-                                   value="{{ dati.versione_cv or '' }}" placeholder="es. v3, cv_backend">
+                                   value="{{ dati.versione_cv or '' }}"
+                                   placeholder="es. v3, cv_backend">
                         </div>
 
                         <div class="col-md-6">
@@ -118,6 +128,7 @@
 
                     </div>
                 </div>
+
                 <div class="card-footer d-flex justify-content-end gap-2">
                     <a href="{{ url_for('candidature.lista') }}" class="btn btn-outline-secondary">Annulla</a>
                     <button type="submit" class="btn btn-primary">
@@ -129,29 +140,48 @@
 
     </div>
 </div>
+{% endblock %}
 
+
+{% block scripts %}
 <script>
-    // quando si cambia azienda, mostra solo i referenti di quell'azienda
+    /**
+     * Filtra i referenti nel <select> in base all'azienda selezionata.
+     * Quando l'utente cambia azienda, nasconde i referenti che non appartengono
+     * all'azienda scelta, lasciando solo quelli pertinenti.
+     */
     function filtraReferenti() {
+        // prende il valore selezionato nel menu aziende (es. "3" per l'azienda con id=3)
         const aziendaId = document.getElementById('azienda_id').value;
+
+        // prende il menu <select> dei referenti
         const selectReferente = document.getElementById('referente_id');
 
+        // scorre tutte le <option> del select referenti
         for (const option of selectReferente.options) {
-            if (option.value === '') continue; // l'opzione "nessuno" resta sempre visibile
+            // l'opzione "nessuno" (value="") resta sempre visibile
+            if (option.value === '') continue;
+
+            // dataset.azienda legge l'attributo HTML data-azienda="{{ r.azienda_id }}"
+            // che avevamo scritto nel template. Confronta con l'azienda selezionata.
             const appartiene = option.dataset.azienda === aziendaId;
+
+            // hidden=true nasconde l'opzione, hidden=false la mostra
             option.hidden = !appartiene;
         }
 
-        // se il referente già selezionato non appartiene alla nuova azienda, deselezionalo
+        // se il referente già selezionato non appartiene alla nuova azienda, lo deseleziona
         const selezionato = selectReferente.selectedOptions[0];
         if (selezionato && selezionato.hidden) {
             selectReferente.value = '';
         }
     }
 
+    // addEventListener: esegue filtraReferenti ogni volta che cambia l'azienda selezionata
     document.getElementById('azienda_id').addEventListener('change', filtraReferenti);
 
-    // esegui subito al caricamento della pagina (utile in modalità modifica)
+    // esegui subito al caricamento: in modalità modifica l'azienda è già selezionata,
+    // quindi dobbiamo filtrare i referenti fin dall'inizio
     filtraReferenti();
 </script>
 {% endblock %}

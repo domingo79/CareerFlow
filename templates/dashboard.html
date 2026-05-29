@@ -7,8 +7,8 @@
     <h1 class="h3 mb-0"><i class="bi bi-bar-chart-line me-2"></i>Dashboard</h1>
 </div>
 
+{# Se non ci sono ancora candidature, mostriamo un messaggio invece dei grafici #}
 {% if totale == 0 %}
-{# stato vuoto: nessuna candidatura ancora inserita #}
 <div class="text-center py-5 text-muted">
     <i class="bi bi-bar-chart-line fs-1 d-block mb-3"></i>
     <p class="mb-0">Nessuna candidatura ancora. Aggiungine una per vedere le statistiche.</p>
@@ -19,7 +19,12 @@
 
 {% else %}
 
-{# ── KPI CARDS ──────────────────────────────────────────── #}
+{# ── KPI CARDS ──────────────────────────────────────────────────── #}
+{#
+    Quattro card con i numeri principali.
+    col-6 col-md-3: su mobile 2 per riga, su desktop 4 per riga.
+    Le variabili totale, aperte, ecc. vengono da routes/dashboard.py.
+#}
 <div class="row g-3 mb-4">
 
     <div class="col-6 col-md-3">
@@ -60,20 +65,21 @@
 
 </div>
 
-{# ── GRAFICI riga 1 ─────────────────────────────────────── #}
+{# ── GRAFICI riga 1 ─────────────────────────────────────────────── #}
 <div class="row g-3 mb-4">
 
-    {# grafico a barre: candidature per stato #}
+    {# Grafico a barre: una barra per ogni stato con il suo colore #}
     <div class="col-lg-8">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-white fw-semibold">Candidature per stato</div>
             <div class="card-body">
+                {# <canvas> è l'elemento HTML su cui Chart.js disegna il grafico #}
                 <canvas id="barreStati" height="120"></canvas>
             </div>
         </div>
     </div>
 
-    {# grafico a torta: positivo / negativo / neutro #}
+    {# Grafico a ciambella: mostra la proporzione positivo/negativo/neutro #}
     <div class="col-lg-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-white fw-semibold">Distribuzione per tipo</div>
@@ -85,7 +91,7 @@
 
 </div>
 
-{# ── GRAFICO TREND MENSILE ──────────────────────────────── #}
+{# ── GRAFICO TREND MENSILE ──────────────────────────────────────── #}
 <div class="row g-3">
     <div class="col-12">
         <div class="card shadow-sm">
@@ -101,48 +107,63 @@
 {% endblock %}
 
 
+{#
+    {% block scripts %} carica Chart.js solo in questa pagina,
+    non in tutte le altre (dove non serve e rallenterebbe il caricamento).
+#}
 {% block scripts %}
-{# Chart.js — libreria per i grafici #}
+
+{# Chart.js: libreria JavaScript per i grafici, caricata da CDN #}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <script>
-    // dati passati da Flask come JSON
-    const barreLabels  = {{ barre_labels | safe }};
-    const barreValori  = {{ barre_valori | safe }};
-    const barreColori  = {{ barre_colori | safe }};
+    /*
+     * Le variabili barre_labels, barre_valori, ecc. sono state create in Python
+     * con json.dumps() e passate al template con render_template().
+     *
+     * {{ barre_labels | safe }} stampa la stringa JSON nell'HTML senza codificare
+     * i caratteri speciali (| safe dice a Jinja2 "fidati, non fare l'escape").
+     * Il risultato è qualcosa come: const barreLabels = ["INVIATA", "RICEVUTA", ...];
+     *
+     * Senza | safe, Jinja2 convertirebbe le virgolette in &quot; e JavaScript fallirebbe.
+     */
+    const barreLabels = {{ barre_labels | safe }};
+    const barreValori = {{ barre_valori | safe }};
+    const barreColori = {{ barre_colori | safe }};
 
-    const tortaLabels  = {{ torta_labels | safe }};
-    const tortaValori  = {{ torta_valori | safe }};
-    const tortaColori  = {{ torta_colori | safe }};
+    const tortaLabels = {{ torta_labels | safe }};
+    const tortaValori = {{ torta_valori | safe }};
+    const tortaColori = {{ torta_colori | safe }};
 
-    const trendLabels  = {{ trend_labels | safe }};
-    const trendValori  = {{ trend_valori | safe }};
+    const trendLabels = {{ trend_labels | safe }};
+    const trendValori = {{ trend_valori | safe }};
 
-    // ── grafico a barre: stati ──
+    /* ── Grafico a barre: candidature per stato ────────────────── */
     new Chart(document.getElementById('barreStati'), {
         type: 'bar',
         data: {
-            labels: barreLabels,
+            labels: barreLabels,   // nomi degli stati sull'asse X
             datasets: [{
                 label: 'Candidature',
-                data: barreValori,
-                backgroundColor: barreColori,
-                borderColor: barreColori.map(c => c),
+                data: barreValori,              // altezza di ogni barra
+                backgroundColor: barreColori,  // colore di ogni barra (dal DB)
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            plugins: { legend: { display: false } },  // nasconde la legenda
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }  // asse Y parte da 0, step 1
+            }
         }
     });
 
-    // ── grafico a torta: tipo ──
+    /* ── Grafico a ciambella: distribuzione per tipo ───────────── */
     new Chart(document.getElementById('tortaTipo'), {
         type: 'doughnut',
         data: {
-            labels: tortaLabels,
+            labels: tortaLabels,   // positivo, negativo, neutro
             datasets: [{
                 data: tortaValori,
                 backgroundColor: tortaColori,
@@ -151,23 +172,23 @@
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: 'bottom' } }
+            plugins: { legend: { position: 'bottom' } }  // legenda sotto il grafico
         }
     });
 
-    // ── trend mensile ──
+    /* ── Grafico a linea: trend mensile ────────────────────────── */
     new Chart(document.getElementById('trendMensile'), {
         type: 'line',
         data: {
-            labels: trendLabels,
+            labels: trendLabels,  // mesi sull'asse X (es. "2026-03")
             datasets: [{
                 label: 'Candidature',
                 data: trendValori,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13,110,253,0.08)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 4
+                borderColor: '#0d6efd',                    // colore della linea
+                backgroundColor: 'rgba(13,110,253,0.08)',  // area sotto la linea
+                fill: true,    // riempie l'area sotto la linea
+                tension: 0.3,  // rende la linea leggermente curva
+                pointRadius: 4 // dimensione dei pallini sui punti
             }]
         },
         options: {
