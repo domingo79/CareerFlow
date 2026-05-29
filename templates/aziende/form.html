@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Modifica azienda' if azienda else 'Nuova azienda' }} — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('aziende.lista') }}" class="btn btn-link text-muted p-0 me-3">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <h1 class="h3 mb-0">
+                {{ 'Modifica azienda' if azienda else 'Nuova azienda' }}
+            </h1>
+        </div>
+
+        <form method="post" novalidate>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Nome azienda <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="nome" class="form-control"
+                                   value="{{ dati.nome or '' }}" required autofocus>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Città</label>
+                            <input type="text" name="citta" class="form-control"
+                                   value="{{ dati.citta or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Paese</label>
+                            <input type="text" name="paese" class="form-control"
+                                   value="{{ dati.paese or '' }}" placeholder="Italia">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Dimensione</label>
+                            <select name="dimensione_azienda_id" class="form-select">
+                                <option value="">— seleziona —</option>
+                                {% for d in dimensioni %}
+                                <option value="{{ d.id }}"
+                                    {% if dati.dimensione_azienda_id | default(0) | int == d.id %}selected{% endif %}>
+                                    {{ d.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Sito web</label>
+                            <input type="url" name="sito_web" class="form-control"
+                                   value="{{ dati.sito_web or '' }}" placeholder="https://...">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">LinkedIn</label>
+                            <input type="url" name="linkedin" class="form-control"
+                                   value="{{ dati.linkedin or '' }}"
+                                   placeholder="https://linkedin.com/company/...">
+                        </div>
+
+                        <div class="col-12"><hr class="my-1"></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Username portale</label>
+                            <input type="text" name="username" class="form-control"
+                                   value="{{ dati.username or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Note accesso</label>
+                            <input type="text" name="note_accesso" class="form-control"
+                                   value="{{ dati.note_accesso or '' }}"
+                                   placeholder="es. password portale">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Note</label>
+                            <textarea name="note" class="form-control" rows="3">{{ dati.note or '' }}</textarea>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('aziende.lista') }}" class="btn btn-outline-secondary">Annulla</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Salva
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

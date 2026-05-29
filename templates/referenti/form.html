@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Modifica referente' if referente else 'Nuovo referente' }} — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('referenti.lista') }}" class="btn btn-link text-muted p-0 me-3">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <h1 class="h3 mb-0">
+                {{ 'Modifica referente' if referente else 'Nuovo referente' }}
+            </h1>
+        </div>
+
+        <form method="post" novalidate>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Azienda <span class="text-danger">*</span>
+                            </label>
+                            <select name="azienda_id" class="form-select" required>
+                                <option value="">— seleziona —</option>
+                                {% for a in aziende %}
+                                <option value="{{ a.id }}"
+                                    {% if dati.azienda_id | default(0) | int == a.id %}selected{% endif %}>
+                                    {{ a.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Nome <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="nome" class="form-control"
+                                   value="{{ dati.nome or '' }}" required autofocus>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Cognome</label>
+                            <input type="text" name="cognome" class="form-control"
+                                   value="{{ dati.cognome or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Ruolo</label>
+                            <input type="text" name="ruolo" class="form-control"
+                                   value="{{ dati.ruolo or '' }}" placeholder="es. HR Manager, CTO">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" name="telefono" class="form-control"
+                                   value="{{ dati.telefono or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control"
+                                   value="{{ dati.email or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">LinkedIn</label>
+                            <input type="url" name="linkedin" class="form-control"
+                                   value="{{ dati.linkedin or '' }}"
+                                   placeholder="https://linkedin.com/in/...">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Note</label>
+                            <textarea name="note" class="form-control" rows="3">{{ dati.note or '' }}</textarea>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('referenti.lista') }}" class="btn btn-outline-secondary">Annulla</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Salva
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

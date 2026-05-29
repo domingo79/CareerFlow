@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="bi bi-bar-chart-line me-2"></i>Dashboard</h1>
+</div>
+
+{% if totale == 0 %}
+{# stato vuoto: nessuna candidatura ancora inserita #}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-bar-chart-line fs-1 d-block mb-3"></i>
+    <p class="mb-0">Nessuna candidatura ancora. Aggiungine una per vedere le statistiche.</p>
+    <a href="{{ url_for('candidature.nuova') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-lg me-1"></i>Aggiungi candidatura
+    </a>
+</div>
+
+{% else %}
+
+{# ── KPI CARDS ──────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-primary">{{ totale }}</div>
+                <div class="text-muted small">Totale candidature</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-warning">{{ aperte }}</div>
+                <div class="text-muted small">Ancora aperte</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-success">{{ perc_colloqui }}%</div>
+                <div class="text-muted small">Arrivate a colloquio</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-danger">{{ perc_ghostati }}%</div>
+                <div class="text-muted small">Ghostati</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# ── GRAFICI riga 1 ─────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    {# grafico a barre: candidature per stato #}
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Candidature per stato</div>
+            <div class="card-body">
+                <canvas id="barreStati" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# grafico a torta: positivo / negativo / neutro #}
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Distribuzione per tipo</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="tortaTipo" style="max-height:220px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# ── GRAFICO TREND MENSILE ──────────────────────────────── #}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Candidature per mese</div>
+            <div class="card-body">
+                <canvas id="trendMensile" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+
+{% block scripts %}
+{# Chart.js — libreria per i grafici #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<script>
+    // dati passati da Flask come JSON
+    const barreLabels  = {{ barre_labels | safe }};
+    const barreValori  = {{ barre_valori | safe }};
+    const barreColori  = {{ barre_colori | safe }};
+
+    const tortaLabels  = {{ torta_labels | safe }};
+    const tortaValori  = {{ torta_valori | safe }};
+    const tortaColori  = {{ torta_colori | safe }};
+
+    const trendLabels  = {{ trend_labels | safe }};
+    const trendValori  = {{ trend_valori | safe }};
+
+    // ── grafico a barre: stati ──
+    new Chart(document.getElementById('barreStati'), {
+        type: 'bar',
+        data: {
+            labels: barreLabels,
+            datasets: [{
+                label: 'Candidature',
+                data: barreValori,
+                backgroundColor: barreColori,
+                borderColor: barreColori.map(c => c),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    // ── grafico a torta: tipo ──
+    new Chart(document.getElementById('tortaTipo'), {
+        type: 'doughnut',
+        data: {
+            labels: tortaLabels,
+            datasets: [{
+                data: tortaValori,
+                backgroundColor: tortaColori,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // ── trend mensile ──
+    new Chart(document.getElementById('trendMensile'), {
+        type: 'line',
+        data: {
+            labels: trendLabels,
+            datasets: [{
+                label: 'Candidature',
+                data: trendValori,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>
+{% endblock %}

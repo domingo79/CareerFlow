@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Aziende — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="bi bi-building me-2"></i>Aziende</h1>
+    <a href="{{ url_for('aziende.nuova') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuova azienda
+    </a>
+</div>
+
+{% if aziende %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Città</th>
+                    <th>Dimensione</th>
+                    <th>Link</th>
+                    <th class="text-end">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in aziende %}
+                <tr>
+                    <td class="fw-semibold">{{ a.nome }}</td>
+                    <td class="text-muted">
+                        {{ a.citta or '—' }}{% if a.paese %}, {{ a.paese }}{% endif %}
+                    </td>
+                    <td>
+                        {% if a.dimensione %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ a.dimensione }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if a.sito_web %}
+                            <a href="{{ a.sito_web }}" target="_blank" class="text-muted me-2" title="Sito web">
+                                <i class="bi bi-globe"></i>
+                            </a>
+                        {% endif %}
+                        {% if a.linkedin %}
+                            <a href="{{ a.linkedin }}" target="_blank" class="text-muted" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                        {% endif %}
+                        {% if not a.sito_web and not a.linkedin %}—{% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('aziende.modifica', id=a.id) }}"
+                           class="btn btn-sm btn-outline-secondary me-1" title="Modifica">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('aziende.elimina', id=a.id) }}" method="post" class="d-inline"
+                              onsubmit="return confirm('Eliminare {{ a.nome }}?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="text-muted small mt-2">{{ aziende | length }} aziend{{ 'a' if aziende | length == 1 else 'e' }}</p>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-building fs-1 d-block mb-3"></i>
+    <p class="mb-0">Nessuna azienda registrata.</p>
+    <a href="{{ url_for('aziende.nuova') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-lg me-1"></i>Aggiungi la prima
+    </a>
+</div>
+{% endif %}
+{% endblock %}

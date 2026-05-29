@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Referenti — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="bi bi-person-lines-fill me-2"></i>Referenti</h1>
+    <a href="{{ url_for('referenti.nuovo') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuovo referente
+    </a>
+</div>
+
+{% if referenti %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Ruolo</th>
+                    <th>Azienda</th>
+                    <th>Contatti</th>
+                    <th class="text-end">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in referenti %}
+                <tr>
+                    <td class="fw-semibold">
+                        {{ r.nome }} {{ r.cognome or '' }}
+                    </td>
+                    <td class="text-muted">{{ r.ruolo or '—' }}</td>
+                    <td>{{ r.nome_azienda }}</td>
+                    <td>
+                        {% if r.email %}
+                            <a href="mailto:{{ r.email }}" class="text-muted me-2" title="{{ r.email }}">
+                                <i class="bi bi-envelope"></i>
+                            </a>
+                        {% endif %}
+                        {% if r.telefono %}
+                            <a href="tel:{{ r.telefono }}" class="text-muted me-2" title="{{ r.telefono }}">
+                                <i class="bi bi-telephone"></i>
+                            </a>
+                        {% endif %}
+                        {% if r.linkedin %}
+                            <a href="{{ r.linkedin }}" target="_blank" class="text-muted" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                        {% endif %}
+                        {% if not r.email and not r.telefono and not r.linkedin %}—{% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('referenti.modifica', id=r.id) }}"
+                           class="btn btn-sm btn-outline-secondary me-1" title="Modifica">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('referenti.elimina', id=r.id) }}" method="post" class="d-inline"
+                              onsubmit="return confirm('Eliminare {{ r.nome }}?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Elimina">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="text-muted small mt-2">{{ referenti | length }} referent{{ 'e' if referenti | length == 1 else 'i' }}</p>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-person-lines-fill fs-1 d-block mb-3"></i>
+    <p class="mb-0">Nessun referente registrato.</p>
+    <a href="{{ url_for('referenti.nuovo') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-plus-lg me-1"></i>Aggiungi il primo
+    </a>
+</div>
+{% endif %}
+{% endblock %}

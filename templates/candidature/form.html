@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Modifica candidatura' if candidatura else 'Nuova candidatura' }} — CareerFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('candidature.lista') }}" class="btn btn-link text-muted p-0 me-3">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <h1 class="h3 mb-0">
+                {{ 'Modifica candidatura' if candidatura else 'Nuova candidatura' }}
+            </h1>
+        </div>
+
+        <form method="post" novalidate>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Posizione <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="posizione" class="form-control"
+                                   value="{{ dati.posizione or '' }}" required autofocus
+                                   placeholder="es. Backend Developer, Data Analyst">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Azienda <span class="text-danger">*</span>
+                            </label>
+                            <select name="azienda_id" id="azienda_id" class="form-select" required>
+                                <option value="">— seleziona —</option>
+                                {% for a in aziende %}
+                                <option value="{{ a.id }}"
+                                    {% if dati.azienda_id | default(0) | int == a.id %}selected{% endif %}>
+                                    {{ a.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Referente</label>
+                            {# il JS qui sotto filtra i referenti in base all'azienda scelta #}
+                            <select name="referente_id" id="referente_id" class="form-select">
+                                <option value="">— nessuno —</option>
+                                {% for r in referenti %}
+                                <option value="{{ r.id }}"
+                                        data-azienda="{{ r.azienda_id }}"
+                                    {% if dati.referente_id | default(0) | int == r.id %}selected{% endif %}>
+                                    {{ r.nome }} {{ r.cognome or '' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                Stato <span class="text-danger">*</span>
+                            </label>
+                            <select name="stato_candidatura_id" class="form-select" required>
+                                <option value="">— seleziona —</option>
+                                {% for s in stati %}
+                                <option value="{{ s.id }}"
+                                    {% if dati.stato_candidatura_id | default(0) | int == s.id %}selected{% endif %}>
+                                    {{ s.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Modalità di lavoro</label>
+                            <select name="modalita_lavoro_id" class="form-select">
+                                <option value="">— seleziona —</option>
+                                {% for m in modalita %}
+                                <option value="{{ m.id }}"
+                                    {% if dati.modalita_lavoro_id | default(0) | int == m.id %}selected{% endif %}>
+                                    {{ m.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Data candidatura</label>
+                            <input type="date" name="data_candidatura" class="form-control"
+                                   value="{{ dati.data_candidatura or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Data colloquio</label>
+                            <input type="date" name="data_colloquio" class="form-control"
+                                   value="{{ dati.data_colloquio or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Versione CV</label>
+                            <input type="text" name="versione_cv" class="form-control"
+                                   value="{{ dati.versione_cv or '' }}" placeholder="es. v3, cv_backend">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">URL offerta</label>
+                            <input type="url" name="url_offerta" class="form-control"
+                                   value="{{ dati.url_offerta or '' }}" placeholder="https://...">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Note</label>
+                            <textarea name="note" class="form-control" rows="3">{{ dati.note or '' }}</textarea>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('candidature.lista') }}" class="btn btn-outline-secondary">Annulla</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Salva
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    // quando si cambia azienda, mostra solo i referenti di quell'azienda
+    function filtraReferenti() {
+        const aziendaId = document.getElementById('azienda_id').value;
+        const selectReferente = document.getElementById('referente_id');
+
+        for (const option of selectReferente.options) {
+            if (option.value === '') continue; // l'opzione "nessuno" resta sempre visibile
+            const appartiene = option.dataset.azienda === aziendaId;
+            option.hidden = !appartiene;
+        }
+
+        // se il referente già selezionato non appartiene alla nuova azienda, deselezionalo
+        const selezionato = selectReferente.selectedOptions[0];
+        if (selezionato && selezionato.hidden) {
+            selectReferente.value = '';
+        }
+    }
+
+    document.getElementById('azienda_id').addEventListener('change', filtraReferenti);
+
+    // esegui subito al caricamento della pagina (utile in modalità modifica)
+    filtraReferenti();
+</script>
+{% endblock %}
