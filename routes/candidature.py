@@ -69,11 +69,31 @@ def nuova():
                                        stati=stati, modalita=modalita,
                                        dati=request.form)
 
-            # date.today().isoformat() restituisce la data di oggi come stringa
-            # nel formato 'YYYY-MM-DD' (es. '2026-05-29').
-            # Viene usata come fallback se l'utente non compila il campo data.
-            # Non possiamo affidarci al DEFAULT CURRENT_DATE dello schema SQL
-            # perché passare None esplicitamente sovrascrive il default.
+            if not db.execute('SELECT id FROM aziende WHERE id=? AND attiva=1', (azienda_id,)).fetchone():
+                flash('Azienda non valida.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form)
+
+            if not db.execute('SELECT id FROM stati_candidatura WHERE id=? AND attiva=1', (stato_id,)).fetchone():
+                flash('Stato non valido.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form)
+
+            referente_id = request.form.get('referente_id') or None
+            if referente_id and not db.execute(
+                'SELECT id FROM referenti WHERE id=? AND attiva=1 AND azienda_id=?',
+                (referente_id, azienda_id)
+            ).fetchone():
+                flash('Referente non valido per questa azienda.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form)
+
             db.execute('''
                 INSERT INTO candidature
                     (azienda_id, referente_id, posizione, stato_candidatura_id,
@@ -82,7 +102,7 @@ def nuova():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 azienda_id,
-                request.form.get('referente_id') or None,
+                referente_id,
                 posizione,
                 stato_id,
                 request.form.get('modalita_lavoro_id') or None,
@@ -139,6 +159,31 @@ def modifica(id):
                                        stati=stati, modalita=modalita,
                                        dati=request.form, candidatura=candidatura)
 
+            if not db.execute('SELECT id FROM aziende WHERE id=? AND attiva=1', (azienda_id,)).fetchone():
+                flash('Azienda non valida.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form, candidatura=candidatura)
+
+            if not db.execute('SELECT id FROM stati_candidatura WHERE id=? AND attiva=1', (stato_id,)).fetchone():
+                flash('Stato non valido.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form, candidatura=candidatura)
+
+            referente_id = request.form.get('referente_id') or None
+            if referente_id and not db.execute(
+                'SELECT id FROM referenti WHERE id=? AND attiva=1 AND azienda_id=?',
+                (referente_id, azienda_id)
+            ).fetchone():
+                flash('Referente non valido per questa azienda.', 'danger')
+                return render_template('candidature/form.html',
+                                       aziende=aziende, referenti=referenti,
+                                       stati=stati, modalita=modalita,
+                                       dati=request.form, candidatura=candidatura)
+
             db.execute('''
                 UPDATE candidature
                 SET azienda_id=?, referente_id=?, posizione=?,
@@ -148,7 +193,7 @@ def modifica(id):
                 WHERE id=?
             ''', (
                 azienda_id,
-                request.form.get('referente_id') or None,
+                referente_id,
                 posizione,
                 stato_id,
                 request.form.get('modalita_lavoro_id') or None,

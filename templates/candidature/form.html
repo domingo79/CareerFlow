@@ -162,7 +162,7 @@
             // l'opzione "nessuno" (value="") resta sempre visibile
             if (option.value === '') continue;
 
-            // dataset.azienda legge l'attributo HTML data-azienda="{{ r.azienda_id }}"
+            // dataset.azienda legge l'attributo HTML data-azienda="<id_azienda>"
             // che avevamo scritto nel template. Confronta con l'azienda selezionata.
             const appartiene = option.dataset.azienda === aziendaId;
 

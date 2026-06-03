@@ -1,23 +1,6 @@
-# ============================================================
-# routes/aziende.py — tutte le pagine relative alle aziende
-# Operazioni disponibili: lista, nuova, modifica, elimina
-# ============================================================
-
-# Blueprint, render_template, request, redirect, url_for, flash
-# sono strumenti di Flask importati uno per uno:
-#   Blueprint        → raggruppa route dello stesso argomento in un file separato
-#   render_template  → legge un file HTML dalla cartella templates/ e lo restituisce
-#   request          → contiene i dati della richiesta HTTP (form, parametri URL, ecc.)
-#   redirect         → dice al browser di andare a un'altra pagina
-#   url_for          → genera l'URL di una route dal suo nome (es. 'aziende.lista' → '/aziende/')
-#   flash            → aggiunge un messaggio temporaneo (successo/errore) visibile una sola volta
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from service.db import apri_db   # mia connessione al DB
 
-from service.db import apri_db   # il nostro gestore di connessione al DB
-
-
-# Blueprint('aziende', ..., url_prefix='/aziende') significa:
-# - il nome di questo gruppo di route è 'aziende'
 # - tutte le route definite qui inizieranno con /aziende/
 aziende_bp = Blueprint('aziende', __name__, url_prefix='/aziende')
 
@@ -27,10 +10,6 @@ aziende_bp = Blueprint('aziende', __name__, url_prefix='/aziende')
 @aziende_bp.route('/')
 def lista():
     with apri_db() as db:
-        # SELECT con LEFT JOIN: prendiamo tutte le colonne di 'aziende' (a.*)
-        # più il nome della dimensione dall'altra tabella (d.nome AS dimensione).
-        # LEFT JOIN significa: includi l'azienda anche se non ha una dimensione associata.
-        # WHERE a.attiva = 1: mostra solo le aziende non eliminate (soft delete).
         aziende = db.execute('''
             SELECT a.*, d.nome AS dimensione
             FROM aziende a
@@ -38,33 +17,25 @@ def lista():
             WHERE a.attiva = 1
             ORDER BY a.nome
         ''').fetchall()
-        # fetchall() restituisce una lista con tutte le righe trovate.
-        # Se non ci sono risultati, restituisce una lista vuota [].
-
     # render_template cerca il file in templates/aziende/lista.html
-    # e passa la variabile 'aziende' al template HTML
     return render_template('aziende/lista.html', aziende=aziende)
 
 
 # ── NUOVA AZIENDA ──────────────────────────────────────────
 # URL: GET /aziende/nuova  → mostra il form vuoto
 # URL: POST /aziende/nuova → riceve i dati del form e salva
-# methods=['GET', 'POST'] dice a Flask che questa route accetta entrambi i metodi HTTP
 @aziende_bp.route('/nuova', methods=['GET', 'POST'])
 def nuova():
     with apri_db() as db:
         # carichiamo le dimensioni azienda per riempire il menu <select> nel form
-        dimensioni = db.execute('SELECT * FROM dimensione_azienda ORDER BY id').fetchall()
+        dimensioni = db.execute(
+            'SELECT * FROM dimensione_azienda ORDER BY id').fetchall()
 
-        # request.method dice che tipo di richiesta è arrivata:
-        # - 'GET'  → l'utente ha cliccato il link "Nuova azienda"
-        # - 'POST' → l'utente ha compilato il form e premuto "Salva"
         if request.method == 'POST':
 
             # request.form è un dizionario con i valori del form HTML.
             # .get('nome', '') restituisce il valore del campo 'nome',
             # oppure '' se il campo non esiste (evita KeyError).
-            # .strip() rimuove spazi all'inizio e alla fine.
             nome = request.form.get('nome', '').strip()
 
             # validazione: il nome è obbligatorio
@@ -77,8 +48,6 @@ def nuova():
                 return render_template('aziende/form.html', dimensioni=dimensioni, dati=request.form)
 
             # INSERT INTO salva una nuova riga nel DB.
-            # I '?' sono segnaposto: SQLite li sostituisce con i valori nella tupla.
-            # Usare i segnaposto invece di concatenare stringhe evita la SQL injection.
             db.execute('''
                 INSERT INTO aziende
                     (nome, linkedin, sito_web, username, note_accesso, citta, paese, dimensione_azienda_id, note)
@@ -86,7 +55,6 @@ def nuova():
             ''', (
                 nome,
                 # 'or None': se il campo è una stringa vuota '', salviamo NULL nel DB
-                # (più corretto di salvare una stringa vuota)
                 request.form.get('linkedin') or None,
                 request.form.get('sito_web') or None,
                 request.form.get('username') or None,
@@ -96,8 +64,6 @@ def nuova():
                 request.form.get('dimensione_azienda_id') or None,
                 request.form.get('note') or None,
             ))
-            # db.commit() rende permanenti le modifiche nel file .db.
-            # Senza commit le modifiche esistono solo in memoria e vanno perse.
             db.commit()
 
             # flash con 'success' → messaggio verde di conferma
@@ -127,7 +93,8 @@ def modifica(id):
         if azienda is None:
             return redirect(url_for('aziende.lista'))
 
-        dimensioni = db.execute('SELECT * FROM dimensione_azienda ORDER BY id').fetchall()
+        dimensioni = db.execute(
+            'SELECT * FROM dimensione_azienda ORDER BY id').fetchall()
 
         if request.method == 'POST':
             nome = request.form.get('nome', '').strip()
@@ -178,14 +145,34 @@ def modifica(id):
 @aziende_bp.route('/<int:id>/elimina', methods=['POST'])
 def elimina(id):
     with apri_db() as db:
-        azienda = db.execute('SELECT nome FROM aziende WHERE id = ?', (id,)).fetchone()
+        azienda = db.execute(
+            'SELECT nome FROM aziende WHERE id = ?', (id,)).fetchone()
         if azienda:
-            # SOFT DELETE: non cancelliamo la riga dal DB (DELETE sarebbe irreversibile),
-            # ma impostiamo attiva=0. Le query che mostrano i dati filtrano con WHERE attiva=1,
-            # quindi l'azienda sparisce dall'interfaccia ma resta nel DB per sicurezza.
+            referenti_attivi = db.execute(
+                'SELECT COUNT(*) FROM referenti WHERE azienda_id = ? AND attiva = 1', (id,)
+            ).fetchone()[0]
+            candidature_attive = db.execute(
+                'SELECT COUNT(*) FROM candidature WHERE azienda_id = ? AND attiva = 1', (id,)
+            ).fetchone()[0]
+
+            if referenti_attivi or candidature_attive:
+                dettagli = []
+                if referenti_attivi:
+                    dettagli.append(
+                        f'{referenti_attivi} referent{"e" if referenti_attivi == 1 else "i"}')
+                if candidature_attive:
+                    dettagli.append(
+                        f'{candidature_attive} candidatur{"a" if candidature_attive == 1 else "e"}')
+                flash(
+                    f'Impossibile eliminare "{azienda["nome"]}": '
+                    f'ci sono ancora {" e ".join(dettagli)} collegati. '
+                    'Eliminali prima di procedere.',
+                    'danger'
+                )
+                return redirect(url_for('aziende.lista'))
+
             db.execute('UPDATE aziende SET attiva = 0 WHERE id = ?', (id,))
             db.commit()
-            # 'warning' → messaggio giallo
             flash(f'Azienda "{azienda["nome"]}" eliminata.', 'warning')
 
     return redirect(url_for('aziende.lista'))

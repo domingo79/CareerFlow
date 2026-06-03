@@ -2,8 +2,6 @@
 
 {#
     Questo form è usato sia per CREARE una nuova azienda che per MODIFICARNE una esistente.
-    Python passa la variabile 'azienda' solo in caso di modifica.
-    Il template la usa per cambiare titolo e precompilare i campi.
 #}
 {% block title %}{{ 'Modifica azienda' if azienda else 'Nuova azienda' }} — CareerFlow{% endblock %}
 
@@ -17,7 +15,6 @@
                 <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <h1 class="h3 mb-0">
-                {# operatore ternario Jinja2: 'valore_se_vero' if condizione else 'valore_se_falso' #}
                 {{ 'Modifica azienda' if azienda else 'Nuova azienda' }}
             </h1>
         </div>

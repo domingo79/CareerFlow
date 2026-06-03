@@ -4,6 +4,8 @@
 # a un'azienda. La logica è identica ad aziende.py.
 # ============================================================
 
+import sqlite3
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from service.db import apri_db
 
@@ -38,28 +40,39 @@ def nuovo():
 
         if request.method == 'POST':
             nome       = request.form.get('nome', '').strip()
-            azienda_id = request.form.get('azienda_id')   # ID dell'azienda scelta nel select
+            azienda_id = request.form.get('azienda_id')
 
-            # validazione: entrambi i campi sono obbligatori
             if not nome or not azienda_id:
                 flash('Nome e azienda sono obbligatori.', 'danger')
                 return render_template('referenti/form.html', aziende=aziende, dati=request.form)
 
-            db.execute('''
-                INSERT INTO referenti
-                    (azienda_id, nome, cognome, email, telefono, ruolo, linkedin, note)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                azienda_id,
-                nome,
-                request.form.get('cognome') or None,
-                request.form.get('email') or None,
-                request.form.get('telefono') or None,
-                request.form.get('ruolo') or None,
-                request.form.get('linkedin') or None,
-                request.form.get('note') or None,
-            ))
-            db.commit()
+            az = db.execute(
+                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (azienda_id,)
+            ).fetchone()
+            if az is None:
+                flash('Azienda non valida.', 'danger')
+                return render_template('referenti/form.html', aziende=aziende, dati=request.form)
+
+            try:
+                db.execute('''
+                    INSERT INTO referenti
+                        (azienda_id, nome, cognome, email, telefono, ruolo, linkedin, note)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    azienda_id,
+                    nome,
+                    request.form.get('cognome') or None,
+                    request.form.get('email') or None,
+                    request.form.get('telefono') or None,
+                    request.form.get('ruolo') or None,
+                    request.form.get('linkedin') or None,
+                    request.form.get('note') or None,
+                ))
+                db.commit()
+            except sqlite3.IntegrityError:
+                flash('Esiste già un referente con questa email.', 'danger')
+                return render_template('referenti/form.html', aziende=aziende, dati=request.form)
+
             flash(f'Referente "{nome}" aggiunto.', 'success')
             return redirect(url_for('referenti.lista'))
 
@@ -92,23 +105,41 @@ def modifica(id):
                                        dati=request.form,
                                        referente=referente)
 
-            db.execute('''
-                UPDATE referenti
-                SET azienda_id=?, nome=?, cognome=?, email=?,
-                    telefono=?, ruolo=?, linkedin=?, note=?
-                WHERE id=?
-            ''', (
-                azienda_id,
-                nome,
-                request.form.get('cognome') or None,
-                request.form.get('email') or None,
-                request.form.get('telefono') or None,
-                request.form.get('ruolo') or None,
-                request.form.get('linkedin') or None,
-                request.form.get('note') or None,
-                id
-            ))
-            db.commit()
+            az = db.execute(
+                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (azienda_id,)
+            ).fetchone()
+            if az is None:
+                flash('Azienda non valida.', 'danger')
+                return render_template('referenti/form.html',
+                                       aziende=aziende,
+                                       dati=request.form,
+                                       referente=referente)
+
+            try:
+                db.execute('''
+                    UPDATE referenti
+                    SET azienda_id=?, nome=?, cognome=?, email=?,
+                        telefono=?, ruolo=?, linkedin=?, note=?
+                    WHERE id=?
+                ''', (
+                    azienda_id,
+                    nome,
+                    request.form.get('cognome') or None,
+                    request.form.get('email') or None,
+                    request.form.get('telefono') or None,
+                    request.form.get('ruolo') or None,
+                    request.form.get('linkedin') or None,
+                    request.form.get('note') or None,
+                    id
+                ))
+                db.commit()
+            except sqlite3.IntegrityError:
+                flash('Esiste già un referente con questa email.', 'danger')
+                return render_template('referenti/form.html',
+                                       aziende=aziende,
+                                       dati=request.form,
+                                       referente=referente)
+
             flash(f'Referente "{nome}" aggiornato.', 'success')
             return redirect(url_for('referenti.lista'))
 
@@ -124,7 +155,8 @@ def elimina(id):
     with apri_db() as db:
         referente = db.execute('SELECT nome FROM referenti WHERE id = ?', (id,)).fetchone()
         if referente:
-            # soft delete: attiva=0 invece di DELETE
+            # replica ON DELETE SET NULL: rimuove il collegamento dalle candidature
+            db.execute('UPDATE candidature SET referente_id = NULL WHERE referente_id = ?', (id,))
             db.execute('UPDATE referenti SET attiva = 0 WHERE id = ?', (id,))
             db.commit()
             flash(f'Referente "{referente["nome"]}" eliminato.', 'warning')

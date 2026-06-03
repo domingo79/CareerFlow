@@ -24,3 +24,19 @@ eventuali implementazioni in corso d'opera
     (Opzionale) Se esiste una email cheker - Per rilevare automaticamente risposte ricevute e suggerire di aggiornare lo stato.
 
     (Opzionale) Se esiste un calendario - Per aggiungere promemoria o colloqui.
+
+
+## NOTE
+
+
+Blueprint        → raggruppa route dello stesso argomento in un file separato
+
+render_template  → legge un file HTML dalla cartella templates/ e lo restituisce
+
+request          → contiene i dati della richiesta HTTP (form, parametri URL, ecc.)
+
+redirect         → dice al browser di andare a un'altra pagina
+
+url_for          → genera l'URL di una route dal suo nome (es. 'aziende.lista' → '/aziende/')
+
+flash            → aggiunge un messaggio temporaneo (successo/errore) visibile una sola volta
