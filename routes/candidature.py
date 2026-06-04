@@ -1,8 +1,3 @@
-# ============================================================
-# routes/candidature.py — tutte le pagine relative alle candidature
-# È la sezione centrale dell'app: collega aziende, referenti e stati.
-# ============================================================
-
 from datetime import date   # per ottenere la data di oggi in Python
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from service.db import apri_db
@@ -38,7 +33,7 @@ def lista():
 def nuova():
     with apri_db() as db:
         # carichiamo tutte le liste necessarie per i menu <select> del form
-        aziende   = db.execute(
+        aziende = db.execute(
             'SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome'
         ).fetchall()
 
@@ -48,20 +43,20 @@ def nuova():
             WHERE r.attiva = 1
             ORDER BY r.nome
         ''').fetchall()
-        # nota: passiamo azienda_id per ogni referente così il JavaScript
-        # nel form può filtrare i referenti in base all'azienda scelta
 
         stati = db.execute(
             'SELECT * FROM stati_candidatura WHERE attiva = 1 ORDER BY ordine'
         ).fetchall()
 
-        modalita = db.execute('SELECT * FROM modalita_lavoro ORDER BY id').fetchall()
+        modalita = db.execute(
+            'SELECT * FROM modalita_lavoro ORDER BY id').fetchall()
 
         if request.method == 'POST':
-            posizione  = request.form.get('posizione', '').strip()
+            posizione = request.form.get('posizione', '').strip()
             azienda_id = request.form.get('azienda_id')
-            stato_id   = request.form.get('stato_candidatura_id')
+            stato_id = request.form.get('stato_candidatura_id')
 
+            # campi obbligatori
             if not posizione or not azienda_id or not stato_id:
                 flash('Posizione, azienda e stato sono obbligatori.', 'danger')
                 return render_template('candidature/form.html',
@@ -69,6 +64,7 @@ def nuova():
                                        stati=stati, modalita=modalita,
                                        dati=request.form)
 
+            # l'azienda deve esistere e non essere stata disattivata
             if not db.execute('SELECT id FROM aziende WHERE id=? AND attiva=1', (azienda_id,)).fetchone():
                 flash('Azienda non valida.', 'danger')
                 return render_template('candidature/form.html',
@@ -76,6 +72,7 @@ def nuova():
                                        stati=stati, modalita=modalita,
                                        dati=request.form)
 
+            # lo stato deve essere ancora attivo nel workflow
             if not db.execute('SELECT id FROM stati_candidatura WHERE id=? AND attiva=1', (stato_id,)).fetchone():
                 flash('Stato non valido.', 'danger')
                 return render_template('candidature/form.html',
@@ -84,6 +81,7 @@ def nuova():
                                        dati=request.form)
 
             referente_id = request.form.get('referente_id') or None
+            # il referente è opzionale, ma se indicato deve appartenere a quell'azienda
             if referente_id and not db.execute(
                 'SELECT id FROM referenti WHERE id=? AND attiva=1 AND azienda_id=?',
                 (referente_id, azienda_id)
@@ -107,7 +105,8 @@ def nuova():
                 stato_id,
                 request.form.get('modalita_lavoro_id') or None,
                 request.form.get('versione_cv') or None,
-                request.form.get('data_candidatura') or date.today().isoformat(),
+                request.form.get(
+                    'data_candidatura') or date.today().isoformat(),
                 request.form.get('data_colloquio') or None,
                 request.form.get('url_offerta') or None,
                 request.form.get('note') or None,
@@ -132,8 +131,8 @@ def modifica(id):
         if candidatura is None:
             return redirect(url_for('candidature.lista'))
 
-        # carichiamo di nuovo tutte le liste per i menu <select>
-        aziende   = db.execute(
+        # carichiamo tutte le liste per i menu <select>
+        aziende = db.execute(
             'SELECT id, nome FROM aziende WHERE attiva = 1 ORDER BY nome'
         ).fetchall()
         referenti = db.execute('''
@@ -142,16 +141,18 @@ def modifica(id):
             WHERE r.attiva = 1
             ORDER BY r.nome
         ''').fetchall()
-        stati    = db.execute(
+        stati = db.execute(
             'SELECT * FROM stati_candidatura WHERE attiva = 1 ORDER BY ordine'
         ).fetchall()
-        modalita = db.execute('SELECT * FROM modalita_lavoro ORDER BY id').fetchall()
+        modalita = db.execute(
+            'SELECT * FROM modalita_lavoro ORDER BY id').fetchall()
 
         if request.method == 'POST':
-            posizione  = request.form.get('posizione', '').strip()
+            posizione = request.form.get('posizione', '').strip()
             azienda_id = request.form.get('azienda_id')
-            stato_id   = request.form.get('stato_candidatura_id')
+            stato_id = request.form.get('stato_candidatura_id')
 
+            # campi obbligatori
             if not posizione or not azienda_id or not stato_id:
                 flash('Posizione, azienda e stato sono obbligatori.', 'danger')
                 return render_template('candidature/form.html',
@@ -159,6 +160,7 @@ def modifica(id):
                                        stati=stati, modalita=modalita,
                                        dati=request.form, candidatura=candidatura)
 
+            # l'azienda deve esistere e non essere stata disattivata
             if not db.execute('SELECT id FROM aziende WHERE id=? AND attiva=1', (azienda_id,)).fetchone():
                 flash('Azienda non valida.', 'danger')
                 return render_template('candidature/form.html',
@@ -166,6 +168,7 @@ def modifica(id):
                                        stati=stati, modalita=modalita,
                                        dati=request.form, candidatura=candidatura)
 
+            # lo stato deve essere ancora attivo nel workflow
             if not db.execute('SELECT id FROM stati_candidatura WHERE id=? AND attiva=1', (stato_id,)).fetchone():
                 flash('Stato non valido.', 'danger')
                 return render_template('candidature/form.html',
@@ -174,6 +177,7 @@ def modifica(id):
                                        dati=request.form, candidatura=candidatura)
 
             referente_id = request.form.get('referente_id') or None
+            # il referente è opzionale, ma se indicato deve appartenere a quell'azienda
             if referente_id and not db.execute(
                 'SELECT id FROM referenti WHERE id=? AND attiva=1 AND azienda_id=?',
                 (referente_id, azienda_id)
@@ -198,7 +202,8 @@ def modifica(id):
                 stato_id,
                 request.form.get('modalita_lavoro_id') or None,
                 request.form.get('versione_cv') or None,
-                request.form.get('data_candidatura') or date.today().isoformat(),
+                request.form.get(
+                    'data_candidatura') or date.today().isoformat(),
                 request.form.get('data_colloquio') or None,
                 request.form.get('url_offerta') or None,
                 request.form.get('note') or None,
@@ -225,5 +230,6 @@ def elimina(id):
             # soft delete
             db.execute('UPDATE candidature SET attiva = 0 WHERE id = ?', (id,))
             db.commit()
-            flash(f'Candidatura "{candidatura["posizione"]}" eliminata.', 'warning')
+            flash(
+                f'Candidatura "{candidatura["posizione"]}" eliminata.', 'warning')
     return redirect(url_for('candidature.lista'))

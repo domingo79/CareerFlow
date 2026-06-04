@@ -1,12 +1,5 @@
-{#
-    {% extends 'base.html' %} dice a Jinja2 (il motore di template di Flask)
-    che questo file "eredita" la struttura di base.html.
-    Tutto ciò che è fuori dai blocchi {% block %} in base.html viene incluso automaticamente
-    (navbar, CSS, script, ecc.). Noi dobbiamo solo riempire i blocchi.
-#}
 {% extends 'base.html' %}
 
-{# Sovrascriviamo il titolo della scheda del browser #}
 {% block title %}Aziende — CareerFlow{% endblock %}
 
 {% block content %}
@@ -86,12 +79,6 @@
                             <i class="bi bi-pencil"></i>
                         </a>
 
-                        {#
-                            Pulsante elimina: è un <form> con metodo POST perché
-                            l'eliminazione è un'azione che modifica i dati.
-                            Non usiamo un semplice link (GET) per evitare eliminazioni accidentali.
-                            onsubmit="return confirm(...)" mostra un popup di conferma prima di inviare.
-                        #}
                         <form action="{{ url_for('aziende.elimina', id=a.id) }}" method="post"
                               class="d-inline"
                               onsubmit="return confirm('Eliminare {{ a.nome }}?')">
