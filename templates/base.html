@@ -3,12 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    {#
-        {% block title %} è un "blocco" che i template figli possono sovrascrivere.
-        Se un template non definisce {% block title %}, viene usato il testo di default "CareerFlow".
-        Es: in aziende/lista.html scriviamo {% block title %}Aziende — CareerFlow{% endblock %}
-    #}
     <title>{% block title %}CareerFlow{% endblock %}</title>
 
     {# Bootstrap 5: framework CSS caricato da CDN (internet) #}
@@ -110,12 +104,11 @@
 
 </main>
 
-{# JavaScript di Bootstrap (necessario per navbar mobile, alert dismiss, ecc.) #}
+{# JavaScript di Bootstrap (necessario per navbar mobile, alert, ecc.) #}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 {#
-    {% block scripts %} è un secondo blocco opzionale per JavaScript aggiuntivo.
-    Solo dashboard.html lo usa (per caricare Chart.js).
+    {% block scripts %} viene usato solo da dashboard.html per caricare Chart.js.
     Le altre pagine non lo definiscono, quindi rimane vuoto.
 #}
 {% block scripts %}{% endblock %}
