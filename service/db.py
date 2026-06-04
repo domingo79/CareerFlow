@@ -12,7 +12,7 @@ SCHEMA_PATH = os.path.abspath(
 
 
 def get_db():
-    """Apre e restituisce una connessione al database SQLite."""
+    """Apre e restituisce una connessione al database."""
 
     # timeout=10: se un'altra connessione sta scrivendo, aspetta fino a 10 secondi
     conn = sqlite3.connect(DB_PATH, timeout=10)
@@ -33,6 +33,7 @@ def apri_db():
     try:
         # 'yield conn' sospende questa funzione e consegna la connessione
         # al blocco 'with' nel codice chiamante.
+        # In pratica "consegna conn a chi la usa, poi aspetta qui finché il blocco with non finisce, poi continua con finally".
         yield conn
     finally:
         conn.close()

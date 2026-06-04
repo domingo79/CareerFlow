@@ -118,14 +118,8 @@
 
 <script>
     /*
-     * Le variabili barre_labels, barre_valori, ecc. sono state create in Python
-     * con json.dumps() e passate al template con render_template().
-     *
-     * {{ barre_labels | safe }} stampa la stringa JSON nell'HTML senza codificare
-     * i caratteri speciali (| safe dice a Jinja2 "fidati, non fare l'escape").
-     * Il risultato è qualcosa come: const barreLabels = ["INVIATA", "RICEVUTA", ...];
-     *
      * Senza | safe, Jinja2 convertirebbe le virgolette in &quot; e JavaScript fallirebbe.
+     * con safe scrive la stringa grezza barreLabels = ["INVIATA", "GHOST", etc];
      */
     const barreLabels = {{ barre_labels | safe }};
     const barreValori = {{ barre_valori | safe }};
