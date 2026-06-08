@@ -1,7 +1,6 @@
 # ============================================================
 # routes/referenti.py — tutte le pagine relative ai referenti
-# Un referente è una persona (HR, recruiter, manager) collegata
-# a un'azienda. La logica è identica ad aziende.py.
+# La logica è identica ad aziende.py.
 # ============================================================
 
 import sqlite3
@@ -39,7 +38,7 @@ def nuovo():
         ).fetchall()
 
         if request.method == 'POST':
-            nome       = request.form.get('nome', '').strip()
+            nome = request.form.get('nome', '').strip()
             azienda_id = request.form.get('azienda_id')
 
             if not nome or not azienda_id:
@@ -47,7 +46,8 @@ def nuovo():
                 return render_template('referenti/form.html', aziende=aziende, dati=request.form)
 
             az = db.execute(
-                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (azienda_id,)
+                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (
+                    azienda_id,)
             ).fetchone()
             if az is None:
                 flash('Azienda non valida.', 'danger')
@@ -95,7 +95,7 @@ def modifica(id):
         ).fetchall()
 
         if request.method == 'POST':
-            nome       = request.form.get('nome', '').strip()
+            nome = request.form.get('nome', '').strip()
             azienda_id = request.form.get('azienda_id')
 
             if not nome or not azienda_id:
@@ -106,7 +106,8 @@ def modifica(id):
                                        referente=referente)
 
             az = db.execute(
-                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (azienda_id,)
+                'SELECT id FROM aziende WHERE id = ? AND attiva = 1', (
+                    azienda_id,)
             ).fetchone()
             if az is None:
                 flash('Azienda non valida.', 'danger')
@@ -153,10 +154,12 @@ def modifica(id):
 @referenti_bp.route('/<int:id>/elimina', methods=['POST'])
 def elimina(id):
     with apri_db() as db:
-        referente = db.execute('SELECT nome FROM referenti WHERE id = ?', (id,)).fetchone()
+        referente = db.execute(
+            'SELECT nome FROM referenti WHERE id = ?', (id,)).fetchone()
         if referente:
             # replica ON DELETE SET NULL: rimuove il collegamento dalle candidature
-            db.execute('UPDATE candidature SET referente_id = NULL WHERE referente_id = ?', (id,))
+            db.execute(
+                'UPDATE candidature SET referente_id = NULL WHERE referente_id = ?', (id,))
             db.execute('UPDATE referenti SET attiva = 0 WHERE id = ?', (id,))
             db.commit()
             flash(f'Referente "{referente["nome"]}" eliminato.', 'warning')
